@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 
 
+
 class PreDataCleaner:
     """
     Description
@@ -18,6 +19,16 @@ class PreDataCleaner:
     This class will provide some functionality to execute some basic cleanining 
     a arvato data set
     """
+    
+                                    
+    @property
+    def df_metadata(self):
+        return self.__df_metadata
+    
+    @df_metadata.setter
+    def df_metadata(self, val):
+        self.__df_metadata = val    
+    
     def __init__(self, df_metadata:pd.DataFrame):
         """
         Description
@@ -37,7 +48,7 @@ class PreDataCleaner:
         self.df_metadata['Attribute'] = self.df_metadata['Attribute'].str.replace('_RZ','')
 
     
-    def transform(self, df:pd.DataFrame)->pd.DataFrame:
+    def transform(self, df:pd.DataFrame, drop_cols:bool=True)->pd.DataFrame:
         """
         Description
         -----------
@@ -50,14 +61,23 @@ class PreDataCleaner:
             df : pd.DataFrame
                 the dataframe that is to be cleaned
 
-        """        
-        df = self.__mark_nans(df)        
+        """      
+        
+        
+        df = self.__drop_customer_columns(df)
         df = self.__handle_data_load_errors(df)
+        df = self.__fix_year_columns(df)
+        df = self.__mark_nans(df)
+        df = self.__build_features_chidren(df,drop_childcols=drop_cols)
         df = self.__catvars_to_dummies(df)        
-        df = self.__catvars_to_binary(df)        
-        df = self.__drop_columns(df)        
+        df = self.__catvars_to_binary(df)          
+                
+        if drop_cols:                                                
+            df = self.__drop_columns(df)        
+            
         return df
-    
+            
+        
     def fit (self, df:pd.DataFrame)->pd.DataFrame:
         """
         Description
@@ -67,6 +87,39 @@ class PreDataCleaner:
         """
 
         pass
+    
+    def __fix_year_columns(self, df:pd.DataFrame) ->pd.DataFrame:
+        """
+        Description
+        ------------
+        
+            converts year columns to int
+        """        
+        cols = ['MIN_GEBAEUDEJAHR','EINGEZOGENAM_HH_JAHR','GEBURTSJAHR']
+        print(f'fixing year columns: {cols}')
+        for col in cols:
+            df[col].fillna(df[col].median(), inplace=True)
+            df[col].astype('int')
+        
+        
+        return df
+    
+    
+
+        
+    def __drop_customer_columns (self, df:pd.DataFrame, columns_to_drop:bool=None)->pd.DataFrame:
+        """
+        drop additional coloumns of the customer dataset
+        """
+        cols = ['CUSTOMER_GROUP', 'ONLINE_PURCHASE', 'PRODUCT_GROUP']        
+        
+        if cols[0] in df.columns:
+            print(f'Dropping customer dataset cols: {cols}')
+            df = self.__drop_columns(df, cols)
+            
+        return df
+        
+        
     
     def __handle_data_load_errors(self, df:pd.DataFrame) ->pd.DataFrame:
         """
@@ -86,18 +139,42 @@ class PreDataCleaner:
         return df
 
 
-    def __drop_columns(self, df:pd.DataFrame, columns_to_drop:bool=None)->pd.DataFrame:
+    def __drop_columns(self, df:pd.DataFrame, columns_to_drop:list=None)->pd.DataFrame:
         """
         Description
         -----------
+        
+            LP_STATUS_GROB: drop this as LP_STATUS_FEIN contains the same information more detailed
+            LP_FAMILIE_GROB : analogue to LP_STATUS_GROB
+            D19_VERSAND_ANZ_24: drop
+            EINGEFUEGT_AM : just timestamp information when the record has been created
+            LP_LEBENSPHASE_FEIN: drop - we keep just LP_LEBENSPHASE_GROB
 
         """
         # if columns to drop have been defined then use them 
-        # else execute the default cleaning
+        # else execute the default cleaning        
         if columns_to_drop:            
             cols_to_drop = columns_to_drop
         else:
-            cols_to_drop = ['EINGEFUEGT_AM'] 
+            # default set of columns to drop
+            cols_to_drop = ['EINGEFUEGT_AM']
+            
+            # drop because of very high correlation to other columns.
+            cols_toomuchcorrelation = ['CAMEO_DEU_2015','LP_STATUS_GROB','LP_FAMILIE_GROB','D19_VERSAND_ANZ_24','LP_LEBENSPHASE_FEIN', 
+                                       'ANZ_STATISTISCHE_HAUSHALTE', 'CAMEO_INTL_2015', 'D19_VERSAND_ONLINE_DATUM', 'KBA13_HALTER_66',
+                                       'KBA13_HERST_SONST',  #'LP_LEBENSPHASE_GROB'
+                                       'PLZ8_BAUMAX', 'PLZ8_GBZ', 'PLZ8_HHZ',
+                                       'D19_GESAMT_ANZ_24', 'D19_VERSAND_ANZ_12',  'D19_VERSAND_DATUM',   'KBA05_KRSHERST2', 'KBA05_KRSHERST3', 'KBA05_SEG9', 'KBA13_KMH_211', 'PLZ8_ANTG1', 'PLZ8_ANTG3']
+ 
+            
+            # drop because of too many NULL values
+            # Note: 'ALTER_KIND4', 'ALTER_KIND3', 'ALTER_KIND2', 'ALTER_KIND1' are dropped in the feature building step
+            cols_toomanynulls = ['EXTSEL992','KK_KUNDENTYP', 'ALTERSKATEGORIE_FEIN', 
+                                 'D19_LETZTER_KAUF_BRANCHE','D19_GESAMT_ONLINE_QUOTE_12', 'D19_SOZIALES', 'D19_LOTTO','D19_KONSUMTYP', 
+                                 'D19_VERSAND_ONLINE_QUOTE_12','D19_TELKO_ONLINE_QUOTE_12', 'D19_VERSI_ONLINE_QUOTE_12', 'D19_BANKEN_ONLINE_QUOTE_12',
+                                'ALTER_HH', 'KBA05_BAUMAX', 'AGER_TYP', 'TITEL_KZ']            
+            
+            cols_to_drop = cols_to_drop + cols_toomuchcorrelation + cols_toomanynulls
 
         print(f'dropping columns: {cols_to_drop}')                
 
@@ -116,18 +193,21 @@ class PreDataCleaner:
 
         handles categorical variables. This will generate one hot encodings for the defined columns
         """
-        cat_cols = ['CAMEO_DEU_2015','D19_LETZTER_KAUF_BRANCHE']
+        #'CAMEO_DEU_2015' will be dropped - ignore this
+        # D19_LETZTER_KAUF_BRANCHE-> will be deleted 
+        cat_cols = []
 
         print('creating one hot encoding columns for: ')
         for col in cat_cols:
             print(f'\t{col}')
 
-        # create one hot encodings using pandas get_dummies function
-        df_dummies = pd.get_dummies(df[cat_cols], prefix=cat_cols, drop_first=True).astype('int64')
-        df = pd.concat([df, df_dummies], axis=1)
-        
-        # drop original columns
-        df.drop(cat_cols, axis=1, inplace=True)
+        if cat_cols:
+            # create one hot encodings using pandas get_dummies function
+            df_dummies = pd.get_dummies(df[cat_cols], prefix=cat_cols, drop_first=True).astype('int64')
+            df = pd.concat([df, df_dummies], axis=1)
+
+            # drop original columns
+            df.drop(cat_cols, axis=1, inplace=True)        
 
         return df
 
@@ -182,16 +262,100 @@ class PreDataCleaner:
             if (cnt == max_value) or (cnt % (max_value // 10)==0):
                 print(f'\tProcessed columns\r{cnt:4} of {max_value}', end='')
         
+        
+        #fix CAMEO_DEU_2015 XX will be dropped
+        df.loc[df['CAMEO_DEU_2015']=='XX','CAMEO_DEU_2015'] = np.NaN
         print()
         return df
-                                    
-    @property
-    def df_metadata(self):
-        return self.__df_metadata
     
-    @df_metadata.setter
-    def df_metadata(self, val):
-        self.__df_metadata = val
+    def __build_features_chidren(self, df:pd.DataFrame, drop_childcols:bool = True)->pd.DataFrame:
+        """
+        Description
+        -----------
+        
+        This function will build some features based on the given input data
+
+        * Children and Teens: 
+            * Children:= number of children younger or equal than 10
+            * Teens   := number of children older or equal than 10
+
+        Parameters
+        ----------
+            df : pd.DataFrame
+                pandas DataFrame that is to be cleaned. Frame is expected to have columns as AZDIAS or CUSTOMERS                
+        """
+        
+        # num of children > 0
+        df['d_HAS_CHILDREN'] = 0
+        # younger than or equal 10
+        df['d_HAS_CHILDREN_YTE10'] = 0
+
+        df.loc[df['ANZ_KINDER'] > 0, 'd_HAS_CHILDREN'] = 1
+
+        # mask to filter rows that have at least one record
+        mask = df[['ALTER_KIND1','ALTER_KIND2','ALTER_KIND3','ALTER_KIND4']].max(axis=1) < 11
+        df.loc[mask, 'd_HAS_CHILDREN_YTE10'] = 1
+        
+        child_cols = ['ANZ_KINDER','ALTER_KIND1','ALTER_KIND2','ALTER_KIND3','ALTER_KIND4']
+        
+        if drop_childcols:
+            df.drop(child_cols, axis='columns', inplace=True)
+            
+        return df
+        
+
+
+    def __calc_children_features(self, s):
+        """
+        Description
+        -----------
+            uses features 'ALTER_KIND1','ALTER_KIND2','ALTER_KIND3','ALTER_KIND4', 'ANZ_KINDER' to reduce them to 
+            'd_HAS_CHILDREN', 'd_HAS_CHILDREN_YTE10'
+
+
+            * d_HAS_CHILDREN_YTE10 if person has children ANZ_KINDER>0
+            * d_HAS_CHILDREN if person has at least one children <= 10            
+
+        Parameters
+        ----------
+            s : pd.Series
+                series of a particular DataFrame row containing at least these columns
+                'ALTER_KIND1','ALTER_KIND2','ALTER_KIND3','ALTER_KIND4', 'ANZ_KINDER', 'd_HAS_CHILDREN', 'd_HAS_CHILDREN_YTE10'
+        """        
+        yte_10 = (s[['ALTER_KIND1','ALTER_KIND2','ALTER_KIND3','ALTER_KIND4']] <= 10).sum()
+        
+
+        s['d_HAS_CHILDREN'] = s['ANZ_KINDER']>0
+        s['d_HAS_CHILDREN_YTE10']  = yte_10>0
+        
+        return s
+
+    def __calc_child_and_teens(self, s):
+        """
+        Description
+        -----------
+
+        counts the number of children less 10 and greater equal than 10. I assume that for more than 5 children
+        all children > 4 are older than 10. Based on the analysis this is in general true
+
+        Parameters
+        ----------
+            s : pd.Series
+                series of a particular DataFrame row containing at least these columns
+                'ALTER_KIND1','ALTER_KIND2','ALTER_KIND3','ALTER_KIND4', 'ANZ_KINDER', 'd_NUM_CHILDREN_LESS_10', 'd_NUM_CHILDREN_GTE_10'
+        """        
+        less_10 = (s[['ALTER_KIND1','ALTER_KIND2','ALTER_KIND3','ALTER_KIND4']] < 10).sum()
+        gte_10 = s['ANZ_KINDER'] - less_10
+
+        s['d_NUM_CHILDREN_LESS_10'] = less_10
+        s['d_NUM_CHILDREN_GTE_10']  = gte_10
+        
+        return s
+
+
+        
+        
+        
         
 
 class FeatureBuilder:
@@ -232,7 +396,7 @@ class FeatureBuilder:
         """
         pass
 
-    def __build_features_chidren(self, df:pd.DataFrame, drop_childcols:bool = False)->pd.DataFrame:
+    def __build_features_chidren(self, df:pd.DataFrame, drop_childcols:bool = True)->pd.DataFrame:
         """
         Description
         -----------
@@ -263,7 +427,8 @@ class FeatureBuilder:
         child_cols = ['ANZ_KINDER','ALTER_KIND1','ALTER_KIND2','ALTER_KIND3','ALTER_KIND4']
         
         if drop_childcols:
-            df.drop(child_cols, axis='columns')
+            df.drop(child_cols, axis='columns', inplace=True)
+            
         return df
         
 
