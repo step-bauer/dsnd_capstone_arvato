@@ -48,7 +48,7 @@ class PreDataCleaner:
         self.df_metadata['Attribute'] = self.df_metadata['Attribute'].str.replace('_RZ','')
 
     
-    def transform(self, df:pd.DataFrame, drop_cols:bool=True)->pd.DataFrame:
+    def transform(self, df:pd.DataFrame, drop_duplicates:bool=False, build_kind_features:bool=True, drop_cols:bool=True)->pd.DataFrame:
         """
         Description
         -----------
@@ -61,14 +61,19 @@ class PreDataCleaner:
             df : pd.DataFrame
                 the dataframe that is to be cleaned
 
-        """      
-        
-        
+        """                      
         df = self.__drop_customer_columns(df)
         df = self.__handle_data_load_errors(df)
+        
+        if drop_duplicates:
+            df.drop_duplicates(inplace=True)
+            
         df = self.__fix_year_columns(df)
         df = self.__mark_nans(df)
-        df = self.__build_features_chidren(df,drop_childcols=drop_cols)
+        
+        if build_kind_features:
+            df = self.__build_features_chidren(df, drop_childcols=False)
+            
         df = self.__catvars_to_dummies(df)        
         df = self.__catvars_to_binary(df)          
                 
@@ -159,20 +164,26 @@ class PreDataCleaner:
             # default set of columns to drop
             cols_to_drop = ['EINGEFUEGT_AM']
             
-            # drop because of very high correlation to other columns.
+            # drop because of very high correlation to other columns (>=0.9).
             cols_toomuchcorrelation = ['CAMEO_DEU_2015','LP_STATUS_GROB','LP_FAMILIE_GROB','D19_VERSAND_ANZ_24','LP_LEBENSPHASE_FEIN', 
                                        'ANZ_STATISTISCHE_HAUSHALTE', 'CAMEO_INTL_2015', 'D19_VERSAND_ONLINE_DATUM', 'KBA13_HALTER_66',
                                        'KBA13_HERST_SONST',  #'LP_LEBENSPHASE_GROB'
                                        'PLZ8_BAUMAX', 'PLZ8_GBZ', 'PLZ8_HHZ',
-                                       'D19_GESAMT_ANZ_24', 'D19_VERSAND_ANZ_12',  'D19_VERSAND_DATUM',   'KBA05_KRSHERST2', 'KBA05_KRSHERST3', 'KBA05_SEG9', 'KBA13_KMH_211', 'PLZ8_ANTG1', 'PLZ8_ANTG3']
+                                       'D19_GESAMT_ANZ_24', 'D19_VERSAND_ANZ_12',  'D19_VERSAND_DATUM',   'KBA05_KRSHERST2', 
+                                       'KBA05_KRSHERST3', 'KBA05_SEG9', 'KBA13_KMH_211', 'PLZ8_ANTG1', 'PLZ8_ANTG3']
  
             
-            # drop because of too many NULL values
-            # Note: 'ALTER_KIND4', 'ALTER_KIND3', 'ALTER_KIND2', 'ALTER_KIND1' are dropped in the feature building step
-            cols_toomanynulls = ['EXTSEL992','KK_KUNDENTYP', 'ALTERSKATEGORIE_FEIN', 
-                                 'D19_LETZTER_KAUF_BRANCHE','D19_GESAMT_ONLINE_QUOTE_12', 'D19_SOZIALES', 'D19_LOTTO','D19_KONSUMTYP', 
-                                 'D19_VERSAND_ONLINE_QUOTE_12','D19_TELKO_ONLINE_QUOTE_12', 'D19_VERSI_ONLINE_QUOTE_12', 'D19_BANKEN_ONLINE_QUOTE_12',
-                                'ALTER_HH', 'KBA05_BAUMAX', 'AGER_TYP', 'TITEL_KZ']            
+            # drop because of too many NULL values (>30%)            
+            cols_toomanynulls =  ['ALTER_KIND4', 'TITEL_KZ', 'ALTER_KIND3', 'ALTER_KIND2', 'ALTER_KIND1', 
+               'AGER_TYP', 'EXTSEL992', 'KK_KUNDENTYP', 'KBA05_BAUMAX', 'ALTER_HH','D19_LETZTER_KAUF_BRANCHE']
+            
+                                #
+                                #           columns if threshold is 25% 
+                                #
+                                # ['EXTSEL992','KK_KUNDENTYP', 'ALTERSKATEGORIE_FEIN', 
+                                #'D19_LETZTER_KAUF_BRANCHE','D19_GESAMT_ONLINE_QUOTE_12', 'D19_SOZIALES', 'D19_LOTTO','D19_KONSUMTYP', 
+                                # 'D19_VERSAND_ONLINE_QUOTE_12','D19_TELKO_ONLINE_QUOTE_12', 'D19_VERSI_ONLINE_QUOTE_12', 'D19_BANKEN_ONLINE_QUOTE_12',
+                                #'ALTER_HH', 'KBA05_BAUMAX', 'AGER_TYP', 'TITEL_KZ'] 
             
             cols_to_drop = cols_to_drop + cols_toomuchcorrelation + cols_toomanynulls
 
@@ -244,7 +255,9 @@ class PreDataCleaner:
 
         print('replace unkown values by NaNs: ') 
         unknown_val_set = self.df_metadata.copy()
-        unknown_val_set = unknown_val_set[unknown_val_set['Meaning'].str.contains('unknown')]
+        
+        # select all row that contain the term "unknown" 
+        unknown_val_set = unknown_val_set[(unknown_val_set['Meaning'].str.contains('unknown'))]
         unknown_val_set['value_list']  = unknown_val_set['Value'].str.split(',')
         
         #with progressbar.ProgressBar(max_value=unknown_val_set.index.shape[0]) as bar:
@@ -260,12 +273,18 @@ class PreDataCleaner:
 
             cnt += 1
             if (cnt == max_value) or (cnt % (max_value // 10)==0):
-                print(f'\tProcessed columns\r{cnt:4} of {max_value}', end='')
+                print(f'\tProcessed columns\r{cnt:4} of {max_value}', end='\r')
         
         
         #fix CAMEO_DEU_2015 XX will be dropped
         df.loc[df['CAMEO_DEU_2015']=='XX','CAMEO_DEU_2015'] = np.NaN
         print()
+        
+        # fix for LP_LEBENSPHASE_GROB','LP_FAMILIE_FEIN => 0 is not described. We handle it as unknown == missing
+        cols = ['LP_LEBENSPHASE_GROB','LP_FAMILIE_FEIN','GEBURTSJAHR']
+        print(f'replace 0 by NaNs for : {cols}')
+        df.replace({'LP_LEBENSPHASE_GROB':0 ,'LP_FAMILIE_FEIN':0, 'GEBURTSJAHR':0}, np.NaN, inplace=True)
+        
         return df
     
     def __build_features_chidren(self, df:pd.DataFrame, drop_childcols:bool = True)->pd.DataFrame:
