@@ -72,6 +72,7 @@ class PCAProcessor:
         """
         index = self.X_train.index
         
+        
         self.X_train_standardized = self.__scale_and_impute(self.X_train)
         self.X_train_transformed = self.pca.fit_transform(self.X_train_standardized)
         
@@ -81,8 +82,8 @@ class PCAProcessor:
         
         
     def transform (self, df):
-        col_names = self.X_train_transformed.columns
-        index = self.X_train_transformed.index
+        #col_names = df.columns
+        #index = self.df.index
         
         
         df = self.__scale_and_impute(df)
