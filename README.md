@@ -4,19 +4,19 @@
 Udacity DataScience Nanodegree Capstone Project Create a *Customer Segmentation Report for Arvato Financial Solutions*
 
 ## Background
----
+
 
 Arvato Financial Services is a company operating in the mail-order sales business in Germany. The company wants better identify persons that become more likly customers with their marketing campaigns.
 
 ## Project Overview
----
+
 
 In this project, we will analyze demographics data for customers of Arvato a mail-order sales company in Germany, comparing it against demographics information for the general population. 
 
 We will use unsupervised learning techniques to perform customer segmentation, identifying the parts of the population that best describe the core customer base of the company. Then, we'll apply what we've learned on a third dataset with demographics information for targets of a mail order campaign.
 
 ## Table of Contents
----
+
 
 * **Arvato Project Workbook.ipynb**: Main file - The Project jupyter notebook containing all the code and analysis.
 
@@ -37,7 +37,7 @@ We will use unsupervised learning techniques to perform customer segmentation, i
 * Python: Folder of source code used for the analysis - mainly helper functions for data cleaning and visual plots
 
 ## Installation
----
+
 
 As a pre-requisite to  install the needed environment you need [anaconda](https://docs.anaconda.com/anaconda/install/index.html).
 
@@ -49,7 +49,7 @@ conda env create --file conda_environment.yml
 
 
 ## Used Libraries
----
+
 
 The main libraries used are
 
@@ -62,7 +62,7 @@ The main libraries used are
  - yellowbrick=1.3.post1 (Machine Learning Visualization)[https://www.scikit-yb.org/en/latest/api/cluster/elbow.html]
  
  ## Results
- ---
+
 
 Details of the analysis are in the Final Project Report and the main project jupyter workbook. Below are a short summary of the main findings.
 
@@ -118,3 +118,15 @@ confusion matrix for validation on mailout training set gives
 |---                |---:               |---:               |
 |**Actual False**   |   24533           |   17877           |
 |**Actual True**    |   78              |   454             |
+
+
+
+## Kaggle Competition
+The final estimator found is a RandomForest with n=70 estimators and for all other parameters we took the default. 
+ROCAUC score 0.767
+|                   |Predicted False    | Predicted True    |
+|---                |---:               |---:               |
+|**Actual False**   |   30659           |   11771           |
+|**Actual True**    |   100             |   432             |
+
+Kaggle score for this estimator on training data set is 0.87088
