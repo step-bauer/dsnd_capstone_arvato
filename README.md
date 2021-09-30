@@ -98,6 +98,7 @@ checking the data shows that it is very imbalanced
 |**Actual True**    |   40              |   66              |
 
 
+### Supervised learning including general population and customer data sets
 We can also try to use the general population and the cusomter data set as training and the mailout training data as validation set. Therfore we assign the  general population RESPONSE=0 and customer RESPONSE=1.
 
 This results in ROCAUC score for
@@ -123,6 +124,7 @@ confusion matrix for validation on mailout training set gives
 
 ## Kaggle Competition
 The final estimator found is a RandomForest with n=70 estimators and for all other parameters we took the default. 
+Using this estimator on the mailout_trainging data set as validation results in 
 ROCAUC score 0.767
 |                   |Predicted False    | Predicted True    |
 |---                |---:               |---:               |
