@@ -4,19 +4,19 @@
 Udacity DataScience Nanodegree Capstone Project Create a *Customer Segmentation Report for Arvato Financial Solutions*
 
 ## Background
----
+
 
 Arvato Financial Services is a company operating in the mail-order sales business in Germany. The company wants better identify persons that become more likly customers with their marketing campaigns.
 
 ## Project Overview
----
+
 
 In this project, we will analyze demographics data for customers of Arvato a mail-order sales company in Germany, comparing it against demographics information for the general population. 
 
 We will use unsupervised learning techniques to perform customer segmentation, identifying the parts of the population that best describe the core customer base of the company. Then, we'll apply what we've learned on a third dataset with demographics information for targets of a mail order campaign.
 
 ## Table of Contents
----
+
 
 * **Arvato Project Workbook.ipynb**: Main file - The Project jupyter notebook containing all the code and analysis.
 
@@ -25,19 +25,11 @@ We will use unsupervised learning techniques to perform customer segmentation, i
      1. Load and exploration and cleaning of data
      1. Unsupervised learning: Clustering of Population and Customers with PCA and KMeans
      1. Supervised Learning: Building of a ML Model to predict the probability that a given individual will become a customer
-
-* Data: Folder with important data or references to the URL of the used datasets
-    * DIAS Attributes - Values 2017.csv
-    * DIAS Information Levels - Attributes 2017.csv metadata that describes the used features of the data files
-    * Udacity_AZDIAS_052018.csv: general population
-    * Udacity_CUSTOMERS_052018.csv: customer data
-    * Udacity_MAILOUT_052018_TRAIN.csv: training data of the mailout campaign with Label information 
-    * Udacity_MAILOUT_052018_TEST.csv : test data of the mailout campaign without Label information -> used for Kaggle competition
-* Final_Report.pdy: Final Project Report
+* Final_Report.pdz: Final Project Report
 * Python: Folder of source code used for the analysis - mainly helper functions for data cleaning and visual plots
 
 ## Installation
----
+
 
 As a pre-requisite to  install the needed environment you need [anaconda](https://docs.anaconda.com/anaconda/install/index.html).
 
@@ -47,9 +39,19 @@ You can then run the following command
 conda env create --file conda_environment.yml
 ```
 
+### Data Download
+Download project data from udacity workspace and store them in **dsnd_capstone_arvato/data/**. Required files are:
+
+* DIAS Attributes - Values 2017.csv
+* DIAS Information Levels - Attributes 2017.csv metadata that describes the used features of the data files
+* Udacity_AZDIAS_052018.csv: general population
+* Udacity_CUSTOMERS_052018.csv: customer data
+* Udacity_MAILOUT_052018_TRAIN.csv: training data of the mailout campaign with Label information 
+* Udacity_MAILOUT_052018_TEST.csv : test data of the mailout campaign without Label information -> used for Kaggle competition
+
 
 ## Used Libraries
----
+
 
 The main libraries used are
 
@@ -62,7 +64,7 @@ The main libraries used are
  - yellowbrick=1.3.post1 (Machine Learning Visualization)[https://www.scikit-yb.org/en/latest/api/cluster/elbow.html]
  
  ## Results
- ---
+
 
 Details of the analysis are in the Final Project Report and the main project jupyter workbook. Below are a short summary of the main findings.
 
@@ -98,6 +100,7 @@ checking the data shows that it is very imbalanced
 |**Actual True**    |   40              |   66              |
 
 
+### Supervised learning including general population and customer data sets
 We can also try to use the general population and the cusomter data set as training and the mailout training data as validation set. Therfore we assign the  general population RESPONSE=0 and customer RESPONSE=1.
 
 This results in ROCAUC score for
@@ -118,3 +121,16 @@ confusion matrix for validation on mailout training set gives
 |---                |---:               |---:               |
 |**Actual False**   |   24533           |   17877           |
 |**Actual True**    |   78              |   454             |
+
+
+
+## Kaggle Competition
+The final estimator found is a RandomForest with n=70 estimators and for all other parameters we took the default. 
+Using this estimator on the mailout_trainging data set as validation results in 
+ROCAUC score 0.767
+|                   |Predicted False    | Predicted True    |
+|---                |---:               |---:               |
+|**Actual False**   |   30659           |   11771           |
+|**Actual True**    |   100             |   432             |
+
+Kaggle score for this estimator on training data set is 0.87088
