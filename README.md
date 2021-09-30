@@ -25,15 +25,7 @@ We will use unsupervised learning techniques to perform customer segmentation, i
      1. Load and exploration and cleaning of data
      1. Unsupervised learning: Clustering of Population and Customers with PCA and KMeans
      1. Supervised Learning: Building of a ML Model to predict the probability that a given individual will become a customer
-
-* Data: Folder with important data or references to the URL of the used datasets
-    * DIAS Attributes - Values 2017.csv
-    * DIAS Information Levels - Attributes 2017.csv metadata that describes the used features of the data files
-    * Udacity_AZDIAS_052018.csv: general population
-    * Udacity_CUSTOMERS_052018.csv: customer data
-    * Udacity_MAILOUT_052018_TRAIN.csv: training data of the mailout campaign with Label information 
-    * Udacity_MAILOUT_052018_TEST.csv : test data of the mailout campaign without Label information -> used for Kaggle competition
-* Final_Report.pdy: Final Project Report
+* Final_Report.pdz: Final Project Report
 * Python: Folder of source code used for the analysis - mainly helper functions for data cleaning and visual plots
 
 ## Installation
@@ -46,6 +38,16 @@ You can then run the following command
 ```bash
 conda env create --file conda_environment.yml
 ```
+
+### Data Download
+Download project data from udacity workspace and store them in **dsnd_capstone_arvato/data/**. Required files are:
+
+* DIAS Attributes - Values 2017.csv
+* DIAS Information Levels - Attributes 2017.csv metadata that describes the used features of the data files
+* Udacity_AZDIAS_052018.csv: general population
+* Udacity_CUSTOMERS_052018.csv: customer data
+* Udacity_MAILOUT_052018_TRAIN.csv: training data of the mailout campaign with Label information 
+* Udacity_MAILOUT_052018_TEST.csv : test data of the mailout campaign without Label information -> used for Kaggle competition
 
 
 ## Used Libraries
