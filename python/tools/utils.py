@@ -7,6 +7,24 @@ from sklearn.metrics import roc_auc_score, confusion_matrix
 import pandas as pd
 
 class Utils ():
+
+    
+    @classmethod 
+    def print_confusion_matrix(cfm_list:list):
+        """
+        Description
+        ------------
+            Prints a list of confusion matrixes
+            
+        Parameters
+        ----------
+            cfm_list : list
+                list of confution matrixes 1..n
+        """
+        for cfm in cfm_list
+            df_confusion_matrix = pd.DataFrame(cfm, columns=['Pred_False','Pred_True'], index=['Act_False','Act_True'])
+            display(df_confusion_matrix)
+        
     @classmethod
     def run_validation (cls, clf, X_val, y_val):
         y_pred = clf.predict(X_val)
