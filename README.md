@@ -15,6 +15,9 @@ In this project, we will analyze demographics data for customers of Arvato a mai
 
 We will use unsupervised learning techniques to perform customer segmentation, identifying the parts of the population that best describe the core customer base of the company. Then, we'll apply what we've learned on a third dataset with demographics information for targets of a mail order campaign.
 
+## Results
+see [Project Blog](https://stephan-bauer.medium.com/customer-segmentation-report-for-arvato-financial-services-882893203e8e)
+
 ## Table of Contents
 
 
