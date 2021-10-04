@@ -136,4 +136,4 @@ ROCAUC score 0.767
 |**Actual False**   |   30659           |   11771           |
 |**Actual True**    |   100             |   432             |
 
-Kaggle score for this estimator on training data set is 0.87088
+Kaggle score for this estimator on training data set is 0.87088 [Kaggle Leaderboard](https://www.kaggle.com/c/udacity-arvato-identify-customers/leaderboard)
